@@ -7,18 +7,21 @@ exports.findProduct = async (query) =>{
 
     const nameSelector = 'h4.product__tilename';
     const priceSelector = 'span.price__current';
+    const linkSelector = 'a.product__linkcontainer';
 
     try {
         const response = await got(url);
 
         const productNames = $(nameSelector, response.body);
         const productPrices = $(priceSelector, response.body);
+        const links = $(linkSelector, response.body);
 
         let data=[];
         for (let index = 0; index < productNames.length; index++) {
             const name = productNames[index].childNodes[0].data;
             const price = productPrices[index].attribs['data-price'];
-            data.push({name,price})
+            const link = links[index].attribs['href'];
+            data.push({name, price, link})
         }
 
         console.log(data.length + ' items on find list');
@@ -34,21 +37,24 @@ exports.getCart = async (Cookie) => {
     const headers = {Cookie}
     const nameSelector = 'a.line-item-name';
     const priceSelector = 'div.line-item-list__price>span:not(.line-item-list__price--crossed)';
-
+    const linkSelector = 'a.product__linkcontainer';
+    
     try {
         const response = await got(url,{headers})
         const productNames = $(nameSelector, response.body);
         const productPrices = $(priceSelector, response.body);
+        const links = $(linkSelector, response.body);
         
         let data=[];
         for (let index = 0; index < productNames.length; index++) {
             const name = productNames[index].childNodes[0].data;
             const price = productPrices[index].childNodes[0].data;
-            data.push({name,price})
+            const link = links[index].attribs['href'];
+            data.push({name, price, link})
         }
     
         console.log(data.length + ' items on cart');
-        console.log(data)
+        console.log(data);
         
     } catch (error) {
         console.log(error)
