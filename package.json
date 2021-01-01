@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
+    "dev": "ts-node-dev .",
+    "format": "prettier --write ./*.ts",
+    "build": "rm -rf dist && tsc",
+    "start": "node ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,6 +21,10 @@
     "tough-cookie": "^4.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.6"
+    "@types/node": "^14.14.17",
+    "eslint": "^7.16.0",
+    "prettier": "^2.2.1",
+    "ts-node-dev": "^1.1.1",
+    "typescript": "^4.1.3"
   }
 }
