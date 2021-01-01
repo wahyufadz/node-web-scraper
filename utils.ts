@@ -1,7 +1,8 @@
-const $ = require("cheerio");
+const cheerio = require("cheerio");
 // const {promisify} = require('util');
 const got = require("got");
 const { Cookie, CookieJar } = require("tough-cookie");
+const formData = require("form-data");
 
 const cookiejar = new CookieJar();
 const url = "https://www.shopdisney.co.uk";
@@ -22,9 +23,9 @@ exports.search = async function (query: string): Promise<any> {
     });
     setCookie(response);
 
-    const productNames = $(nameSelector, response.body);
-    const productPrices = $(priceSelector, response.body);
-    const links = $(linkSelector, response.body);
+    const productNames = cheerio(nameSelector, response.body);
+    const productPrices = cheerio(priceSelector, response.body);
+    const links = cheerio(linkSelector, response.body);
 
     let data = [];
     for (let index = 0; index < productNames.length; index++) {
@@ -45,7 +46,7 @@ exports.findProductById = async (pid: string): Promise<any> => {
   const path = `${url}/search?q=${pid}`;
   const productNotFoundSelector = "section.search-catlisting-heading>h1";
   // const productHasSetItemsSelector = '.productset__itemsheading'
-  const csrfTokenSelector = "input.csrftoken";
+  const csrfTokenSelector = ".csrftoken";
   try {
     const response = await got(path, {
       headers: { Cookie: cookiejar.getCookieStringSync(url) },
@@ -53,34 +54,33 @@ exports.findProductById = async (pid: string): Promise<any> => {
     setCookie(response);
 
     const productNotFound =
-      $(productNotFoundSelector, response.body).length > 0;
+      cheerio(productNotFoundSelector, response.body).length > 0;
     if (productNotFound) {
       return { message: "product not found" };
     } else {
-      const json = {
-        csrf_token: $(csrfTokenSelector, response.body)[0].attribs["value"],
-        Quantity: 1,
-        format: "ajax",
-        pid,
-      };
+      const form = new formData();
+      form.append(
+        "csrf_token",
+        cheerio(csrfTokenSelector, response.body)[0].attribs["value"]
+      );
+      form.append("Quantity", "1");
+      form.append("format", "ajax");
+      form.append("pid", pid);
+
       const options = {
-        data: JSON.stringify(json),
+        method: "POST",
+        body: form,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           Cookie: cookiejar.getCookieStringSync(url),
         },
       };
-      console.log(
-        "🚀 ~ file: utils.js ~ line 77 ~ exports.findProductById= ~ options",
-        options
-      );
-      const addToChartResponse = await got.post(
+      const addToChartResponse = await got(
         `${url}/on/demandware.store/Sites-disneyuk-Site/en_GB/Cart-AddProduct`,
         options
       );
-      console.log("test", addToChartResponse.body);
+      console.log("result", addToChartResponse.body);
 
-      // const productHasSetItem = $(productHasSetItemsSelector, response.body).length > 0;
       return { message: "success" };
     }
   } catch (error) {
@@ -100,9 +100,9 @@ exports.getCart = async (): Promise<any> => {
 
   try {
     const response = await got(path, { headers });
-    const productNames = $(nameSelector, response.body);
-    const productPrices = $(priceSelector, response.body);
-    const links = $(linkSelector, response.body);
+    const productNames = cheerio(nameSelector, response.body);
+    const productPrices = cheerio(priceSelector, response.body);
+    const links = cheerio(linkSelector, response.body);
 
     if (productNames.length) {
       let data = [];
@@ -130,6 +130,6 @@ function setCookie(response: any) {
       cookies = [Cookie.parse(response.headers["set-cookie"])];
     }
 
-    cookies.map((cookie) => cookiejar.setCookie(cookie, url));
+    cookies.map((cookie: any) => cookiejar.setCookie(cookie, url));
   }
 }
